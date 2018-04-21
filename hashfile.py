@@ -1,9 +1,13 @@
 import hashlib
 
 class HashedFile(object):
+    '''
+    Stores a filename at the associated hash for the file's
+    contents.
+    '''
     def __init__(self, filename, hasher, block):
         self.name   = filename
-        self.hasher = hasher
+        self.hasher = hasher()
         self.block  = block
         self._id    = None
         
