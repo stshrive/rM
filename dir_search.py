@@ -1,10 +1,16 @@
 import os
 import re
 
+import doc_rename as dr
+
 year_regex = re.compile(r'/[0-9]{2}/[0-9]{2}/')
-dir_names  = set()
+dirs  = set()
     
 def get_files(path, extensions):
+    '''
+    Recursively finds all files within a directory following the 
+    <root>/<year_prefix>/<year_postfix> pattern.
+    '''
     walk_data = os.walk(path)
     found = []
 
@@ -15,18 +21,26 @@ def get_files(path, extensions):
     r = re.compile(r'^.*/[0-9]{2}/[0-9]{2}/.*\.' + extensions + '$')
     return [f for f in found if r.match(f)]
             
-def correct_name(path):
-    name, extension = get_name(path)
+def format_name(path):
+    '''
+    Returns a formatted name for files contained in a directory structure
+    following the <root>/<year_prefix>/<year_postfix> pattern
+    '''
+    name, extension = dr.get_name(path)
     root = get_root(path)
     year = get_year(path)
     name = name.replace(year, '')
-    name = get_normalized_name(name) + extension
+    name = dr.normalize_name(name) + extension
     
     return "{r}/[{y}] {n}".format(r=root, y=year, n=name)
 
 def get_root(path):
+    '''
+    Returns the root directory based on the pattern:
+    <root>/<year_prefix>/<year_postfix> 
+    '''
     root = os.path.dirname(path)
-    dir_names.add(root)
+    dirs.add(root)
     root = root + '/'
     year = year_regex.search(root)
     return root[:year.span()[0]]
@@ -36,9 +50,4 @@ def get_year(path):
     year = path[year.span()[0]:year.span()[1]]
 
     return ''.join(year.split('/'))
-
-def get_name(path):
-    ext = path.rfind('.')
-    return path[path.rfind('/') + 1:ext], path[ext:]
-
 
