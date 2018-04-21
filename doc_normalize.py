@@ -6,17 +6,28 @@ import sys
 import argparse
 import platform
 
+import doc_rename
+
 year_regex = re.compile(r'/[0-9]{2}/[0-9]{2}/')
+dir_names  = set()
 
 def main(path, extensions):
-    print(path)
-    print(extensions)
-
     files = get_files(path, extensions)
 
     for f in files:
         new_name = correct_name(f)
-        print('{old}\n  -> {new}'.format(old=f, new=new_name))
+        print('{old}\n->  {new}'.format(old=f, new=new_name))
+        doc_rename.safe_rename(f, new_name)
+
+def cleanup():
+    for d in dir_names:
+        parent = os.path.dirname(d)
+        if len(os.listdir(d)) == 0:
+            os.rmdir(d)
+
+        while len(os.listdir(parent)) == 0:
+            os.rmdir(parent)
+            parent = os.path.dirname(parent)
 
 def validate_args(args):
     ext = [args.pdf, args.txt, args.doc, args.gdoc]
@@ -59,7 +70,9 @@ def correct_name(path):
     return "{r}/[{y}] {n}".format(r=root, y=year, n=name)
 
 def get_root(path):
-    root = os.path.dirname(path) + '/'
+    root = os.path.dirname(path)
+    dir_names.add(root)
+    root = root + '/'
     year = year_regex.search(root)
     return root[:year.span()[0]]
 
@@ -91,14 +104,18 @@ if __name__ == "__main__":
     argparser = argparse.ArgumentParser(sys.argv[0])
 
     argparser.add_argument('-d', '--directory', type=str, default='.')
-
+    argparser.add_argument('-R', '--remove-empty', action='store_true', default=False)
     argparser.add_argument('-P', '--pdf',  action='store_true', default=False)
     argparser.add_argument('-T', '--txt',  action='store_true', default=False)
     argparser.add_argument('-D', '--doc',  action='store_true', default=False)
     argparser.add_argument('-G', '--gdoc', action='store_true', default=False)
+
     argparser.add_argument('--all', action='store_true')
 
     args = argparser.parse_args()
     validate_args(args)
     main(*prepare_args(args))
+
+    if args.remove_empty:
+        cleanup()
 
