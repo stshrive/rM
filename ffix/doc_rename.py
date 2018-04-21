@@ -12,12 +12,18 @@ _default_block  = 65536
 docs = {}
 
 def _get_hasher(hasher=None):
-    return _default_hasher() if hasher is None else hasher()
+    return _default_hasher if hasher is None else hasher
+
 
 def _get_block(block=None):
     return _default_block if block is None else block
 
+
 def _load_docs(save_root):
+    '''
+    Loads all docs within the target directory and creates
+    a content hash for duplicate checking.
+    '''
     if len(docs) == 0:
         print(save_root)
         for f in [f for f in os.listdir(save_root) if os.path.isfile(save_root + f)]:
@@ -25,7 +31,12 @@ def _load_docs(save_root):
             hf = HashedFile(sf, _get_hasher(), _get_block())
             docs[hf.id] = hf.name
 
+
 def _rename(old, new):
+    '''
+    Renames old to new and prompts user when a duplicate file is detected.
+    Files do not need to have the same name to be considered duplicates.
+    '''
     old_hf = HashedFile(old, _get_hasher(), _get_block())
     if old_hf.id not in docs:
         docs[old_hf.id] = new
@@ -42,9 +53,34 @@ def _rename(old, new):
             docs[old_hf.id] = new
         else:
             print("Skipping file")
-            os.remove(old)
+
+        os.remove(old)
+
 
 def safe_rename(old, new):
     save_root = os.path.dirname(new)
     _load_docs(save_root)
     _rename(old, new)
+
+
+def get_name(path):
+    '''
+    Returns the filename (without extension) and the associated extension
+    '''
+    ext = path.rfind('.')
+    return path[path.rfind('/') + 1:ext], path[ext:]
+
+
+def normalize_name(name):
+    '''
+    Given a filename, removes brackets, dashes and spaces and
+    replaces them with underscores.
+    '''
+    name = name.lower()
+    for c in ['-', '_', '[', ']']:
+        if c in name:
+            name = name.replace(c, ' ')
+
+    name = name.strip()
+    name = '_'.join(name.split())
+    return name
