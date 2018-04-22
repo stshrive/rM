@@ -32,7 +32,7 @@ def _load_docs(save_root):
             docs[hf.id] = hf.name
 
 
-def _rename(old, new):
+def _rename(old, new, overwrite):
     '''
     Renames old to new and prompts user when a duplicate file is detected.
     Files do not need to have the same name to be considered duplicates.
@@ -44,8 +44,11 @@ def _rename(old, new):
     else:
         old_name = docs[old_hf.id]
         print('WARNING: Duplicate files detected.')
-        print('(1) REPLACE -> {new}\n(2) SKIP    -> {old}'.format(new=new, old=old_name))
-        selection = input('> ')
+
+        if not overwrite:
+            print('(1) REPLACE -> {new}\n(2) SKIP    -> {old}'.format(new=new, old=old_name))
+        
+        selection = 1 if overwrite else input('> ')
 
         if selection == 1:
             print("Overwriting file")
@@ -57,10 +60,10 @@ def _rename(old, new):
         os.remove(old)
 
 
-def safe_rename(old, new):
+def safe_rename(old, new, overwrite):
     save_root = os.path.dirname(new)
     _load_docs(save_root)
-    _rename(old, new)
+    _rename(old, new, overwrite)
 
 
 def get_name(path):
